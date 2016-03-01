@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">TeknoSeyir</string>
+
+    <string name="karma">Karma</string>
+    <string name="bilgisayar">Bilgisayar</string>
+    <string name="telefon">Telefon</string>
+    <string name="gundem">Gündem</string>
+
+    <string name="error_player">YouTube ile ilgili bir hata oluştu: (%1$s)</string>
+
 </resources>
