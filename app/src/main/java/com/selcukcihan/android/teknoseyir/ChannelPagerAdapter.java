@@ -4,6 +4,8 @@ import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.util.SparseArray;
+import android.view.ViewGroup;
 
 import com.google.api.services.youtube.YouTube;
 
@@ -18,21 +20,19 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
     private final Context mContext;
     private List<Playlist> mPages;
 
+    private SparseArray<Fragment> mRegisteredFragments = new SparseArray<Fragment>();
+
     public ChannelPagerAdapter(Context context, FragmentManager fragmentManager) {
         super(fragmentManager);
 
         mContext = context;
 
         mPages = new LinkedList<Playlist>();
-        mPages.add(new Playlist(
-                mContext.getResources().getString(R.string.karma),
-                "https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=teknoseyir&key={" + DeveloperKey.DEVELOPER_KEY + "}"));
-        mPages.add(new Playlist(mContext.getResources().getString(R.string.bilgisayar), ""));
-        mPages.add(new Playlist(mContext.getResources().getString(R.string.telefon), ""));
-        mPages.add(new Playlist(mContext.getResources().getString(R.string.gundem), ""));
+        mPages.add(new Playlist(mContext.getResources().getString(R.string.karma), "UUFIHrIGT0MBMRHzQtmzOWlQ"));
+        mPages.add(new Playlist(mContext.getResources().getString(R.string.bilgisayar), "PLImzRKDoJEgEoIe2v_z706686pSFZtjt-"));
+        mPages.add(new Playlist(mContext.getResources().getString(R.string.telefon), "PLImzRKDoJEgHq9nQFuJEZoZEMjPA2r-NV"));
+        mPages.add(new Playlist(mContext.getResources().getString(R.string.gundem), "PLImzRKDoJEgHyeIWtq60bav801SWwt515"));
     }
-
-
 
     // Returns total number of pages
     @Override
@@ -50,5 +50,22 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
     @Override
     public CharSequence getPageTitle(int position) {
         return mPages.get(position).getName();
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        Fragment fragment = (Fragment) super.instantiateItem(container, position);
+        mRegisteredFragments.put(position, fragment);
+        return fragment;
+    }
+
+    @Override
+    public void destroyItem(ViewGroup container, int position, Object object) {
+        mRegisteredFragments.remove(position);
+        super.destroyItem(container, position, object);
+    }
+
+    public Fragment getRegisteredFragment(int position) {
+        return mRegisteredFragments.get(position);
     }
 }

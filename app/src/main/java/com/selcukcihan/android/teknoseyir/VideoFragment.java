@@ -1,6 +1,9 @@
 package com.selcukcihan.android.teknoseyir;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
@@ -15,14 +18,18 @@ public class VideoFragment extends YouTubePlayerSupportFragment implements YouTu
     private String videoId;
 
     public static VideoFragment newInstance() {
-        return new VideoFragment();
+        VideoFragment fragment = new VideoFragment();
+        fragment.init();
+        return fragment;
+    }
+
+    private void init() {
+        initialize(DeveloperKey.DEVELOPER_KEY, this);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        initialize(DeveloperKey.DEVELOPER_KEY, this);
     }
 
     @Override

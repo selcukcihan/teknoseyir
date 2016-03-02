@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class VideoAdapter extends BaseAdapter {
 
-    private final List<VideoEntry> entries;
+    private List<VideoEntry> entries;
     private final List<View> entryViews;
     private final Map<YouTubeThumbnailView, YouTubeThumbnailLoader> thumbnailViewToLoaderMap;
     private final LayoutInflater inflater;
@@ -38,6 +38,10 @@ public class VideoAdapter extends BaseAdapter {
         thumbnailListener = new ThumbnailListener();
 
         labelsVisible = true;
+    }
+
+    public void updateData(List<VideoEntry> entries) {
+        this.entries = entries;
     }
 
     public void releaseLoaders() {

@@ -1,11 +1,12 @@
 <resources>
     <string name="app_name">TeknoSeyir</string>
 
-    <string name="karma">Karma</string>
-    <string name="bilgisayar">Bilgisayar</string>
-    <string name="telefon">Telefon</string>
-    <string name="gundem">Gündem</string>
+    <string name="karma">Tüm Videolar</string>
+    <string name="bilgisayar">Bilgisayar Donanımları</string>
+    <string name="telefon">Telefon ve Tablet İncelemeleri</string>
+    <string name="gundem">Haftalık Gündem Değerlendirmesi</string>
 
     <string name="error_player">YouTube ile ilgili bir hata oluştu: (%1$s)</string>
+    <string name="no_data">Bulunamadı</string>
 
 </resources>

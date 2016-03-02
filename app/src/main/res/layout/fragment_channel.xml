@@ -5,11 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <fragment
-        class="com.selcukcihan.android.teknoseyir.PlaylistFragment"
-        android:id="@+id/playlist_fragment"
+    <ListView android:id="@id/android:list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:background="@color/colorLight"
+        android:layout_weight="1"
+        android:drawSelectorOnTop="false"/>
+
+    <TextView android:id="@id/android:empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorAccent"
+        android:text="@string/no_data"/>
 
     <LinearLayout
         android:id="@+id/video_box"
@@ -25,13 +32,11 @@
             android:layout_gravity="center_horizontal"
             android:src="@android:drawable/btn_dialog"
             android:onClick="onClickClose"/>
-<!--
-        <fragment
-            class="com.selcukcihan.android.teknoseyir.VideoFragment"
+
+        <FrameLayout
             android:id="@+id/video_fragment_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
--->
     </LinearLayout>
 
 </LinearLayout>

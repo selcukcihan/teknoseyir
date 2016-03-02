@@ -5,13 +5,13 @@ package com.selcukcihan.android.teknoseyir;
  */
 public class Playlist {
     private final String mName;
-    private final String mURI;
+    private final String mPlaylistId;
 
-    public Playlist(String name, String URI) {
+    public Playlist(String name, String playlistId) {
         mName = name;
-        mURI = URI;
+        mPlaylistId = playlistId;
     }
 
     public String getName() { return mName; }
-    public String getURI() { return mURI; }
+    public String getPlaylistId() { return mPlaylistId; }
 }

@@ -55,8 +55,7 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
     @Override
     public void onFullscreen(boolean isFullscreen) {
         this.mIsFullscreen = isFullscreen;
-
-        //layout();
+        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onFullscreen(isFullscreen);
     }
 
     @Override
