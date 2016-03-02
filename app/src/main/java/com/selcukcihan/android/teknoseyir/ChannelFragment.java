@@ -34,6 +34,7 @@ import java.util.List;
 public class ChannelFragment extends ListFragment {
     private final static String PLAYLIST_NAME_PARAMETER = "com.selcukcihan.android.teknoseyir.PLAYLIST_NAME_PARAMETER";
     private final static String PLAYLIST_ID_PARAMETER = "com.selcukcihan.android.teknoseyir.PLAYLIST_ID_PARAMETER";
+    private final static String PLAYLIST_ICON_ID_PARAMETER = "com.selcukcihan.android.teknoseyir.PLAYLIST_ICON_ID_PARAMETER";
 
     private Playlist mPlaylist;
     private VideoAdapter mAdapter;
@@ -50,6 +51,7 @@ public class ChannelFragment extends ListFragment {
         Bundle args = new Bundle();
         args.putString(PLAYLIST_NAME_PARAMETER, playlist.getName());
         args.putString(PLAYLIST_ID_PARAMETER, playlist.getPlaylistId());
+        args.putInt(PLAYLIST_ICON_ID_PARAMETER, playlist.getIconId());
         fragment.setArguments(args);
         return fragment;
     }
@@ -73,7 +75,9 @@ public class ChannelFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mPlaylist = new Playlist(getArguments().getString(PLAYLIST_NAME_PARAMETER), getArguments().getString(PLAYLIST_ID_PARAMETER));
+            mPlaylist = new Playlist(getArguments().getString(PLAYLIST_NAME_PARAMETER),
+                    getArguments().getString(PLAYLIST_ID_PARAMETER),
+                    getArguments().getInt(PLAYLIST_ICON_ID_PARAMETER));
             mAdapter = new VideoAdapter(getActivity(), mVideos);
             setListAdapter(mAdapter);
         }
@@ -173,7 +177,7 @@ public class ChannelFragment extends ListFragment {
         }
     }
 
-    public void onClickClose(@SuppressWarnings("unused") View view) {
+    public void onClickClose(View view) {
         this.getListView().clearChoices();
         this.getListView().requestLayout();
         mVideoFragment.pause();
@@ -183,7 +187,7 @@ public class ChannelFragment extends ListFragment {
         runOnAnimationEnd(animator, new Runnable() {
             @Override
             public void run() {
-                mVideoBox.setVisibility(View.INVISIBLE);
+                mVideoBox.setVisibility(View.GONE);
             }
         });
     }

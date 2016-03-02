@@ -5,9 +5,15 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.view.View;
+import android.view.ViewPropertyAnimator;
 import android.widget.Toast;
 
 import com.google.android.youtube.player.YouTubeApiServiceUtil;
@@ -47,7 +53,29 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mPager);
+        //mPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
+        mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                String name = mPagerAdapter.getPlaylistItem(position).getName();
+                getSupportActionBar().setSubtitle(name);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+/*
+        getSupportActionBar().setDisplayShowTitleEnabled(true);
+        getSupportActionBar().setLogo(R.mipmap.ic_teknoseyir);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);*/
 
         checkYouTubeApi();
     }
@@ -56,6 +84,10 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
     public void onFullscreen(boolean isFullscreen) {
         this.mIsFullscreen = isFullscreen;
         ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onFullscreen(isFullscreen);
+    }
+
+    public void onClickClose(View view) {
+        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onClickClose(view);
     }
 
     @Override

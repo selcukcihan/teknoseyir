@@ -6,12 +6,15 @@ package com.selcukcihan.android.teknoseyir;
 public class Playlist {
     private final String mName;
     private final String mPlaylistId;
+    private final Integer mIconId;
 
-    public Playlist(String name, String playlistId) {
+    public Playlist(String name, String playlistId, Integer iconId) {
         mName = name;
         mPlaylistId = playlistId;
+        mIconId = iconId;
     }
 
     public String getName() { return mName; }
     public String getPlaylistId() { return mPlaylistId; }
+    public Integer getIconId() { return mIconId; }
 }
