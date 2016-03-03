@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.google.api.services.youtube.YouTube;
@@ -39,10 +40,7 @@ public class ChannelFragment extends ListFragment {
     private final static String PLAYLIST_ICON_ID_PARAMETER = "com.selcukcihan.android.teknoseyir.PLAYLIST_ICON_ID_PARAMETER";
 
     private Playlist mPlaylist;
-    private VideoAdapter mAdapter;
-    private View mVideoBox;
     private List<VideoEntry> mVideos = new LinkedList<VideoEntry>();
-    private View mCloseButton;
 
     private boolean mIsFullscreen;
     private ProgressDialog mDialog;
@@ -65,9 +63,7 @@ public class ChannelFragment extends ListFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mVideoBox = getActivity().findViewById(R.id.video_box);
-        mCloseButton = getActivity().findViewById(R.id.close_button);
-        mVideoBox.setVisibility(View.GONE);
+        this.getView().findViewById(R.id.video_box).setVisibility(View.GONE);
         getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
         new RetrieveJSONTask().execute(mPlaylist.getPlaylistId());
@@ -80,8 +76,7 @@ public class ChannelFragment extends ListFragment {
             mPlaylist = new Playlist(getArguments().getString(PLAYLIST_NAME_PARAMETER),
                     getArguments().getString(PLAYLIST_ID_PARAMETER),
                     getArguments().getInt(PLAYLIST_ICON_ID_PARAMETER));
-            mAdapter = new VideoAdapter(getActivity(), mVideos);
-            setListAdapter(mAdapter);
+            setListAdapter(new VideoAdapter(getActivity(), mVideos));
         }
     }
 
@@ -111,32 +106,31 @@ public class ChannelFragment extends ListFragment {
      * do not get reloaded.
      */
     private void layout() {
-        boolean isPortrait =
-                getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 
         this.getView().setVisibility(mIsFullscreen ? View.GONE : View.VISIBLE);
-        mAdapter.setLabelVisibility(isPortrait);
+        ((VideoAdapter) getListAdapter()).setLabelVisibility(isPortrait);
 
-        mCloseButton.setVisibility(isPortrait ? View.VISIBLE : View.GONE);
+        this.getView().findViewById(R.id.close_button).setVisibility(isPortrait ? View.VISIBLE : View.GONE);
 
         VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
 
         if (mIsFullscreen) {
-            mVideoBox.setTranslationY(0); // Reset any translation that was applied in portrait.
+            this.getView().findViewById(R.id.video_box).setTranslationY(0); // Reset any translation that was applied in portrait.
             setLayoutSize(fragment.getView(), MATCH_PARENT, MATCH_PARENT);
-            setLayoutSizeAndGravity(mVideoBox, MATCH_PARENT, MATCH_PARENT, Gravity.TOP | Gravity.LEFT);
+            setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box), MATCH_PARENT, MATCH_PARENT, Gravity.TOP | Gravity.LEFT);
         } else if (isPortrait) {
             setLayoutSize(this.getView(), MATCH_PARENT, MATCH_PARENT);
             setLayoutSize(fragment.getView(), MATCH_PARENT, WRAP_CONTENT);
-            setLayoutSizeAndGravity(mVideoBox, MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM);
+            setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box), MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM);
         } else {
-            mVideoBox.setTranslationY(0); // Reset any translation that was applied in portrait.
+            this.getView().findViewById(R.id.video_box).setTranslationY(0); // Reset any translation that was applied in portrait.
             int screenWidth = dpToPx(getResources().getConfiguration().screenWidthDp);
             setLayoutSize(this.getView(), screenWidth / 4, MATCH_PARENT);
             int videoWidth = screenWidth - screenWidth / 4 - dpToPx(5);
             setLayoutSize(fragment.getView(), videoWidth, WRAP_CONTENT);
-            setLayoutSizeAndGravity(mVideoBox, videoWidth, WRAP_CONTENT,
-                    Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+            setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box),
+                    videoWidth, WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         }
     }
 
@@ -152,7 +146,7 @@ public class ChannelFragment extends ListFragment {
     }
 
     private static void setLayoutSizeAndGravity(View view, int width, int height, int gravity) {
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) view.getLayoutParams();
         params.width = width;
         params.height = height;
         params.gravity = gravity;
@@ -201,13 +195,16 @@ public class ChannelFragment extends ListFragment {
         VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
         if (fragment != null) {
             fragment.pause();
-            ViewPropertyAnimator animator = mVideoBox.animate()
-                    .translationYBy(mVideoBox.getHeight())
+            ViewPropertyAnimator animator = this.getView().findViewById(R.id.video_box).animate()
+                    .translationYBy(this.getView().findViewById(R.id.video_box).getHeight())
                     .setDuration(300);
             runOnAnimationEnd(animator, new Runnable() {
                 @Override
                 public void run() {
-                    mVideoBox.setVisibility(View.GONE);
+                    View view = ChannelFragment.this.getView().findViewById(R.id.video_box);
+                    if (view != null) {
+                        view.setVisibility(View.GONE);
+                    }
                 }
             });
         }
@@ -252,8 +249,8 @@ public class ChannelFragment extends ListFragment {
             ChannelFragment.this.discardDialog();
             if (mException == null) {
                 mVideos = videos;
-                mAdapter.updateData(videos);
-                mAdapter.notifyDataSetChanged();
+                ((VideoAdapter) ChannelFragment.this.getListAdapter()).updateData(videos);
+                ((VideoAdapter) ChannelFragment.this.getListAdapter()).notifyDataSetChanged();
             }
         }
     }
