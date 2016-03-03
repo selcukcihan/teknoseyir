@@ -50,7 +50,7 @@ public class VideoFragment extends YouTubePlayerSupportFragment implements YouTu
     }
 
     public void pause() {
-        if (player != null) {
+        if (player != null && player.isPlaying()) {
             player.pause();
         }
     }

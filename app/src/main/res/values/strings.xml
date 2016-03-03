@@ -8,5 +8,6 @@
 
     <string name="error_player">YouTube ile ilgili bir hata oluştu: (%1$s)</string>
     <string name="no_data">Bulunamadı</string>
+    <string name="waiting">Yükleniyor</string>
 
 </resources>

@@ -25,7 +25,7 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
     private final Context mContext;
     private List<Playlist> mPages;
 
-    private SparseArray<Fragment> mRegisteredFragments = new SparseArray<Fragment>();
+    private SparseArray<ChannelFragment> mRegisteredFragments = new SparseArray<ChannelFragment>();
 
     public ChannelPagerAdapter(Context context, FragmentManager fragmentManager) {
         super(fragmentManager);
@@ -74,7 +74,7 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
-        Fragment fragment = (Fragment) super.instantiateItem(container, position);
+        ChannelFragment fragment = (ChannelFragment) super.instantiateItem(container, position);
         mRegisteredFragments.put(position, fragment);
         return fragment;
     }
@@ -85,7 +85,7 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
         super.destroyItem(container, position, object);
     }
 
-    public Fragment getRegisteredFragment(int position) {
+    public ChannelFragment getRegisteredFragment(int position) {
         return mRegisteredFragments.get(position);
     }
 }

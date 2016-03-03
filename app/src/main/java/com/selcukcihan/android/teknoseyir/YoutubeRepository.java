@@ -43,7 +43,6 @@ public class YoutubeRepository {
         String channelId = (new JSONObject(firstJSON)).getJSONArray("items").getJSONObject(0).getString("id");
         String playlistsJSON = getJSON("https://www.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50&channelId=" + channelId + "&key=" + DeveloperKey.DEVELOPER_KEY);
         JSONArray array = (new JSONObject(playlistsJSON)).getJSONArray("items");
-
         List<VideoEntry> videos = new LinkedList<VideoEntry>();
         for (int i = 0; i < array.length(); i++) {
             String title = array.getJSONObject(i).getJSONObject("snippet").getString("title");

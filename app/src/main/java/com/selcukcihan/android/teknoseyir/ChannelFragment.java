@@ -6,11 +6,13 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.ProgressDialog;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.view.Gravity;
@@ -40,10 +42,10 @@ public class ChannelFragment extends ListFragment {
     private VideoAdapter mAdapter;
     private View mVideoBox;
     private List<VideoEntry> mVideos = new LinkedList<VideoEntry>();
-    private VideoFragment mVideoFragment;
     private View mCloseButton;
 
     private boolean mIsFullscreen;
+    private ProgressDialog mDialog;
 
     public static ChannelFragment newInstance(Playlist playlist) {
         ChannelFragment fragment = new ChannelFragment();
@@ -87,11 +89,11 @@ public class ChannelFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_channel, container, false);
         if (savedInstanceState == null) {
-            mVideoFragment = VideoFragment.newInstance();
+            Fragment fragment = VideoFragment.newInstance();
             //add child fragment
             getChildFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.video_fragment_container, mVideoFragment, "tag")
+                    .add(R.id.video_fragment_container, fragment, mPlaylist.getPlaylistId())
                     .commit();
         }
         return v;
@@ -114,22 +116,25 @@ public class ChannelFragment extends ListFragment {
 
         this.getView().setVisibility(mIsFullscreen ? View.GONE : View.VISIBLE);
         mAdapter.setLabelVisibility(isPortrait);
+
         mCloseButton.setVisibility(isPortrait ? View.VISIBLE : View.GONE);
+
+        VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
 
         if (mIsFullscreen) {
             mVideoBox.setTranslationY(0); // Reset any translation that was applied in portrait.
-            setLayoutSize(mVideoFragment.getView(), MATCH_PARENT, MATCH_PARENT);
+            setLayoutSize(fragment.getView(), MATCH_PARENT, MATCH_PARENT);
             setLayoutSizeAndGravity(mVideoBox, MATCH_PARENT, MATCH_PARENT, Gravity.TOP | Gravity.LEFT);
         } else if (isPortrait) {
             setLayoutSize(this.getView(), MATCH_PARENT, MATCH_PARENT);
-            setLayoutSize(mVideoFragment.getView(), MATCH_PARENT, WRAP_CONTENT);
+            setLayoutSize(fragment.getView(), MATCH_PARENT, WRAP_CONTENT);
             setLayoutSizeAndGravity(mVideoBox, MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM);
         } else {
             mVideoBox.setTranslationY(0); // Reset any translation that was applied in portrait.
             int screenWidth = dpToPx(getResources().getConfiguration().screenWidthDp);
             setLayoutSize(this.getView(), screenWidth / 4, MATCH_PARENT);
             int videoWidth = screenWidth - screenWidth / 4 - dpToPx(5);
-            setLayoutSize(mVideoFragment.getView(), videoWidth, WRAP_CONTENT);
+            setLayoutSize(fragment.getView(), videoWidth, WRAP_CONTENT);
             setLayoutSizeAndGravity(mVideoBox, videoWidth, WRAP_CONTENT,
                     Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         }
@@ -156,40 +161,56 @@ public class ChannelFragment extends ListFragment {
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        String videoId = mVideos.get(position).getVideoId();
+        VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
+        View videoBox = this.getView().findViewById(R.id.video_box);
+        if (fragment != null) {
+            String videoId = mVideos.get(position).getVideoId();
+            fragment.setVideoId(videoId);
 
-        //VideoFragment videoFragment = (VideoFragment) getFragmentManager().findFragmentById(R.id.video_fragment_container);
-        VideoFragment videoFragment = mVideoFragment;
-        videoFragment.setVideoId(videoId);
-
-        // The videoBox is INVISIBLE if no video was previously selected, so we need to show it now.
-        if (mVideoBox.getVisibility() != View.VISIBLE) {
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                // Initially translate off the screen so that it can be animated in from below.
-                mVideoBox.setTranslationY(mVideoBox.getHeight());
+            // The videoBox is INVISIBLE if no video was previously selected, so we need to show it now.
+            if (videoBox.getVisibility() != View.VISIBLE) {
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    // Initially translate off the screen so that it can be animated in from below.
+                    videoBox.setTranslationY(videoBox.getHeight());
+                }
+                videoBox.setVisibility(View.VISIBLE);
             }
-            mVideoBox.setVisibility(View.VISIBLE);
-        }
 
-        // If the fragment is off the screen, we animate it in.
-        if (mVideoBox.getTranslationY() > 0) {
-            mVideoBox.animate().translationY(0).setDuration(300);
+            // If the fragment is off the screen, we animate it in.
+            if (videoBox.getTranslationY() > 0) {
+                videoBox.animate().translationY(0).setDuration(300);
+            }
         }
+    }
+
+    private void discardDialog() {
+        if ((mDialog != null) && mDialog.isShowing())
+            mDialog.dismiss();
+        mDialog = null;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        discardDialog();
     }
 
     public void onClickClose(View view) {
         this.getListView().clearChoices();
         this.getListView().requestLayout();
-        mVideoFragment.pause();
-        ViewPropertyAnimator animator = mVideoBox.animate()
-                .translationYBy(mVideoBox.getHeight())
-                .setDuration(300);
-        runOnAnimationEnd(animator, new Runnable() {
-            @Override
-            public void run() {
-                mVideoBox.setVisibility(View.GONE);
-            }
-        });
+        VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
+        if (fragment != null) {
+            fragment.pause();
+            ViewPropertyAnimator animator = mVideoBox.animate()
+                    .translationYBy(mVideoBox.getHeight())
+                    .setDuration(300);
+            runOnAnimationEnd(animator, new Runnable() {
+                @Override
+                public void run() {
+                    mVideoBox.setVisibility(View.GONE);
+                }
+            });
+        }
     }
 
     @TargetApi(16)
@@ -209,7 +230,6 @@ public class ChannelFragment extends ListFragment {
     private final class RetrieveJSONTask extends AsyncTask<String, Void, List<VideoEntry>> {
         private Exception mException;
 
-
         protected List<VideoEntry> doInBackground(String... urls) {
 
             try {
@@ -221,7 +241,15 @@ public class ChannelFragment extends ListFragment {
             return null;
         }
 
+        @Override
+        protected void onPreExecute() {
+            ChannelFragment.this.mDialog = new ProgressDialog(getContext());
+            ChannelFragment.this.mDialog.setMessage(ChannelFragment.this.mDialog.getContext().getResources().getString(R.string.waiting));
+            ChannelFragment.this.mDialog.show();
+        }
+
         protected void onPostExecute(List<VideoEntry> videos) {
+            ChannelFragment.this.discardDialog();
             if (mException == null) {
                 mVideos = videos;
                 mAdapter.updateData(videos);
