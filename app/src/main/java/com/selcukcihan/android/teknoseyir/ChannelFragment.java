@@ -12,22 +12,16 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.view.Gravity;
-import android.view.InflateException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
-import com.google.api.services.youtube.YouTube;
 
-import java.nio.channels.Channel;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -84,12 +78,14 @@ public class ChannelFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_channel, container, false);
         if (savedInstanceState == null) {
+            /*
             Fragment fragment = VideoFragment.newInstance();
             //add child fragment
             getChildFragmentManager()
                     .beginTransaction()
                     .add(R.id.video_fragment_container, fragment, mPlaylist.getPlaylistId())
                     .commit();
+                    */
         }
         return v;
     }
@@ -155,25 +151,36 @@ public class ChannelFragment extends ListFragment {
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
+        Fragment fragment = getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
+        VideoFragment videoFragment;
+        if (fragment == null) {
+            videoFragment = VideoFragment.newInstance();
+            //add child fragment
+            getChildFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.video_fragment_container, videoFragment, mPlaylist.getPlaylistId())
+                    .commit();
+        } else{
+            videoFragment = (VideoFragment) fragment;
+        }
+
+        //VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
         View videoBox = this.getView().findViewById(R.id.video_box);
-        if (fragment != null) {
-            String videoId = mVideos.get(position).getVideoId();
-            fragment.setVideoId(videoId);
+        String videoId = mVideos.get(position).getVideoId();
+        videoFragment.setVideoId(videoId);
 
-            // The videoBox is INVISIBLE if no video was previously selected, so we need to show it now.
-            if (videoBox.getVisibility() != View.VISIBLE) {
-                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    // Initially translate off the screen so that it can be animated in from below.
-                    videoBox.setTranslationY(videoBox.getHeight());
-                }
-                videoBox.setVisibility(View.VISIBLE);
+        // The videoBox is INVISIBLE if no video was previously selected, so we need to show it now.
+        if (videoBox.getVisibility() != View.VISIBLE) {
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                // Initially translate off the screen so that it can be animated in from below.
+                videoBox.setTranslationY(videoBox.getHeight());
             }
+            videoBox.setVisibility(View.VISIBLE);
+        }
 
-            // If the fragment is off the screen, we animate it in.
-            if (videoBox.getTranslationY() > 0) {
-                videoBox.animate().translationY(0).setDuration(300);
-            }
+        // If the fragment is off the screen, we animate it in.
+        if (videoBox.getTranslationY() > 0) {
+            videoBox.animate().translationY(0).setDuration(300);
         }
     }
 
@@ -189,25 +196,37 @@ public class ChannelFragment extends ListFragment {
         discardDialog();
     }
 
-    public void onClickClose(View view) {
-        this.getListView().clearChoices();
-        this.getListView().requestLayout();
+    public void pauseVideoFragment(boolean destroy) {
         VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
         if (fragment != null) {
             fragment.pause();
-            ViewPropertyAnimator animator = this.getView().findViewById(R.id.video_box).animate()
-                    .translationYBy(this.getView().findViewById(R.id.video_box).getHeight())
-                    .setDuration(300);
-            runOnAnimationEnd(animator, new Runnable() {
-                @Override
-                public void run() {
-                    View view = ChannelFragment.this.getView().findViewById(R.id.video_box);
-                    if (view != null) {
-                        view.setVisibility(View.GONE);
+            if (destroy) {
+                getChildFragmentManager()
+                        .beginTransaction()
+                        .remove(fragment)
+                        .commit();
+                this.getView().findViewById(R.id.video_box).setVisibility(View.GONE);
+            } else {
+                ViewPropertyAnimator animator = this.getView().findViewById(R.id.video_box).animate()
+                        .translationYBy(this.getView().findViewById(R.id.video_box).getHeight())
+                        .setDuration(300);
+                runOnAnimationEnd(animator, new Runnable() {
+                    @Override
+                    public void run() {
+                        View view = ChannelFragment.this.getView().findViewById(R.id.video_box);
+                        if (view != null) {
+                            view.setVisibility(View.GONE);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
+    }
+
+    public void onClickClose(View view) {
+        this.getListView().clearChoices();
+        this.getListView().requestLayout();
+        pauseVideoFragment(false);
     }
 
     @TargetApi(16)

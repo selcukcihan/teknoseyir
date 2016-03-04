@@ -12,9 +12,6 @@ import android.text.style.ImageSpan;
 import android.util.SparseArray;
 import android.view.ViewGroup;
 
-import com.google.api.services.youtube.YouTube;
-
-import java.nio.channels.Channel;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -62,7 +59,6 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
     // Returns the page title for the top indicator
     @Override
     public CharSequence getPageTitle(int position) {
-        //return mPages.get(position).getName()
         Drawable image = ContextCompat.getDrawable(mContext, mPages.get(position).getIconId());
         image.setBounds(0, 0, image.getIntrinsicWidth(), image.getIntrinsicHeight());
         SpannableString sb = new SpannableString(" ");

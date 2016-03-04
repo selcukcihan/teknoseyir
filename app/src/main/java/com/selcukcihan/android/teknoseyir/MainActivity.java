@@ -3,12 +3,8 @@ package com.selcukcihan.android.teknoseyir;
 import android.content.Intent;
 import android.graphics.Color;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -16,32 +12,16 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.TypefaceSpan;
 import android.view.View;
-import android.view.ViewPropertyAnimator;
 import android.widget.Toast;
 
 import com.google.android.youtube.player.YouTubeApiServiceUtil;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.youtube.YouTube;
-
-import java.io.IOException;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnFullscreenListener {
-    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
-    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
-
     private ChannelPagerAdapter mPagerAdapter;
     private ViewPager mPager;
-    private TabLayout tabLayout;
     private Toolbar mToolbar;
 
     private boolean mIsFullscreen = false;
@@ -75,13 +55,14 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getLayoutInflater().setFactory(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setTitle(generateTitle());
         setSupportActionBar(mToolbar);
-        //getSupportActionBar().setDisplayShowTitleEnabled(true);
 
         mPagerAdapter = new ChannelPagerAdapter(this, getSupportFragmentManager());
         mPager = (ViewPager) findViewById(R.id.top_pager);
@@ -91,10 +72,9 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mPager);
-        //mPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
         mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            private int mPreviousPosition = -1;
+            private int mPreviousPosition = 0;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -105,12 +85,9 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
             public void onPageSelected(int position) {
                 String name = mPagerAdapter.getPlaylistItem(position).getName();
                 mToolbar.setSubtitle(MainActivity.this.generateSubtitle(name));
-
-                if (mPreviousPosition != -1) {
-                    ChannelFragment channelFragment = mPagerAdapter.getRegisteredFragment(mPreviousPosition);
-                    if (channelFragment != null) {
-                        channelFragment.onClickClose(null);
-                    }
+                ChannelFragment channelFragment = mPagerAdapter.getRegisteredFragment(mPreviousPosition);
+                if (channelFragment != null) {
+                    channelFragment.pauseVideoFragment(true);
                 }
                 mPreviousPosition = position;
             }
@@ -120,10 +97,6 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
 
             }
         });
-
-        //getSupportActionBar().setDisplayShowTitleEnabled(true);
-        //getSupportActionBar().setTitle("");
-        //getSupportActionBar().setDisplayUseLogoEnabled(true);
 
         checkYouTubeApi();
     }
