@@ -60,6 +60,8 @@ public class ChannelFragment extends ListFragment {
         this.getView().findViewById(R.id.video_box).setVisibility(View.GONE);
         getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+        layout(getActivity().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT, false);
+
         new RetrieveJSONTask().execute(mPlaylist.getPlaylistId());
     }
 
@@ -96,7 +98,7 @@ public class ChannelFragment extends ListFragment {
         // For full screen, we should not see the list of videos in ChannelFragment
         this.getView().findViewById(android.R.id.list).setVisibility(isFullScreen ? View.GONE : View.VISIBLE);
 
-        ((VideoAdapter) getListAdapter()).setLabelVisibility(isPortrait);
+        ((VideoAdapter) getListAdapter()).setLabelVisibility(!isFullScreen);
         this.getActivity().findViewById(R.id.toolbar).setVisibility(isFullScreen ? View.GONE : View.VISIBLE);
 
         this.getView().findViewById(R.id.close_button).setVisibility(isPortrait ? View.VISIBLE : View.GONE);

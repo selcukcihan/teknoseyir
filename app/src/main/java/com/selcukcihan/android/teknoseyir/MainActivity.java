@@ -60,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
     private void doLayout() {
         boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 
+        //TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        //tabLayout.setupWithViewPager(mPager);
+
         ((TabLayout) findViewById(R.id.tabs)).setVisibility(mIsFullscreen ? View.GONE : View.VISIBLE);
         ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).layout(isPortrait, mIsFullscreen);
     }
