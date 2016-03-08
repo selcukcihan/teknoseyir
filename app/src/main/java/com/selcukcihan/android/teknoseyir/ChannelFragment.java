@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.ListFragment;
+import android.support.v4.view.ViewPager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +37,6 @@ public class ChannelFragment extends ListFragment {
     private Playlist mPlaylist;
     private List<VideoEntry> mVideos = new LinkedList<VideoEntry>();
 
-    private boolean mIsFullscreen;
     private ProgressDialog mDialog;
 
     public static ChannelFragment newInstance(Playlist playlist) {
@@ -77,22 +77,13 @@ public class ChannelFragment extends ListFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_channel, container, false);
-        if (savedInstanceState == null) {
-            /*
-            Fragment fragment = VideoFragment.newInstance();
-            //add child fragment
-            getChildFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.video_fragment_container, fragment, mPlaylist.getPlaylistId())
-                    .commit();
-                    */
-        }
         return v;
     }
 
-    public void onFullscreen(boolean isFullscreen) {
-        this.mIsFullscreen = isFullscreen;
-        layout();
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ((VideoAdapter) getListAdapter()).releaseLoaders();
     }
 
     /**
@@ -101,30 +92,42 @@ public class ChannelFragment extends ListFragment {
      * changes ourselves in order to get fluent fullscreen transitions, so the xml layout resources
      * do not get reloaded.
      */
-    private void layout() {
-        boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+    public void layout(boolean isPortrait, boolean isFullScreen) {
+        // For full screen, we should not see the list of videos in ChannelFragment
+        this.getView().findViewById(android.R.id.list).setVisibility(isFullScreen ? View.GONE : View.VISIBLE);
 
-        this.getView().setVisibility(mIsFullscreen ? View.GONE : View.VISIBLE);
         ((VideoAdapter) getListAdapter()).setLabelVisibility(isPortrait);
+        this.getActivity().findViewById(R.id.toolbar).setVisibility(isFullScreen ? View.GONE : View.VISIBLE);
 
         this.getView().findViewById(R.id.close_button).setVisibility(isPortrait ? View.VISIBLE : View.GONE);
 
         VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
 
-        if (mIsFullscreen) {
+        if (isFullScreen) {
             this.getView().findViewById(R.id.video_box).setTranslationY(0); // Reset any translation that was applied in portrait.
-            setLayoutSize(fragment.getView(), MATCH_PARENT, MATCH_PARENT);
+            if (fragment != null) {
+                setLayoutSize(((View) fragment.getView().getParent()), MATCH_PARENT, MATCH_PARENT);
+            }
             setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box), MATCH_PARENT, MATCH_PARENT, Gravity.TOP | Gravity.LEFT);
         } else if (isPortrait) {
-            setLayoutSize(this.getView(), MATCH_PARENT, MATCH_PARENT);
-            setLayoutSize(fragment.getView(), MATCH_PARENT, WRAP_CONTENT);
+            ((LinearLayout) this.getView()).setOrientation(LinearLayout.VERTICAL);
+            ((LinearLayout) this.getView()).setGravity(Gravity.NO_GRAVITY);
+
+            if (fragment != null) {
+                setLayoutSize(((View) fragment.getView().getParent()), MATCH_PARENT, WRAP_CONTENT);
+            }
             setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box), MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM);
         } else {
+            ((LinearLayout) this.getView()).setOrientation(LinearLayout.HORIZONTAL);
+            ((LinearLayout) this.getView()).setGravity(Gravity.LEFT);
+
             this.getView().findViewById(R.id.video_box).setTranslationY(0); // Reset any translation that was applied in portrait.
             int screenWidth = dpToPx(getResources().getConfiguration().screenWidthDp);
             setLayoutSize(this.getView(), screenWidth / 4, MATCH_PARENT);
             int videoWidth = screenWidth - screenWidth / 4 - dpToPx(5);
-            setLayoutSize(fragment.getView(), videoWidth, WRAP_CONTENT);
+            if (fragment != null) {
+                setLayoutSize(((View) fragment.getView().getParent()), videoWidth, WRAP_CONTENT);
+            }
             setLayoutSizeAndGravity(this.getView().findViewById(R.id.video_box),
                     videoWidth, WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         }
@@ -206,6 +209,8 @@ public class ChannelFragment extends ListFragment {
                         .remove(fragment)
                         .commit();
                 this.getView().findViewById(R.id.video_box).setVisibility(View.GONE);
+                this.getListView().clearChoices();
+                this.getListView().requestLayout();
             } else {
                 ViewPropertyAnimator animator = this.getView().findViewById(R.id.video_box).animate()
                         .translationYBy(this.getView().findViewById(R.id.video_box).getHeight())
@@ -259,9 +264,11 @@ public class ChannelFragment extends ListFragment {
 
         @Override
         protected void onPreExecute() {
-            ChannelFragment.this.mDialog = new ProgressDialog(getContext());
-            ChannelFragment.this.mDialog.setMessage(ChannelFragment.this.mDialog.getContext().getResources().getString(R.string.waiting));
-            ChannelFragment.this.mDialog.show();
+            if (((MainActivity) getActivity()).currentFragmentIs(ChannelFragment.this)) {
+                ChannelFragment.this.mDialog = new ProgressDialog(getContext());
+                ChannelFragment.this.mDialog.setMessage(ChannelFragment.this.mDialog.getContext().getResources().getString(R.string.waiting));
+                ChannelFragment.this.mDialog.show();
+            }
         }
 
         protected void onPostExecute(List<VideoEntry> videos) {

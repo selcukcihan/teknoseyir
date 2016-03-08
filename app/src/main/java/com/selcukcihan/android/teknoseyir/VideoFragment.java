@@ -19,6 +19,7 @@ public class VideoFragment extends YouTubePlayerSupportFragment implements YouTu
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
+        fragment.setRetainInstance(true);
         fragment.init();
         return fragment;
     }

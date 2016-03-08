@@ -1,8 +1,10 @@
 package com.selcukcihan.android.teknoseyir;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -21,12 +23,82 @@ import com.google.android.youtube.player.YouTubePlayer;
 
 public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnFullscreenListener {
     private ChannelPagerAdapter mPagerAdapter;
+    private TabPageChangeListener mTabPageChangeListener;
     private ViewPager mPager;
     private Toolbar mToolbar;
 
     private boolean mIsFullscreen = false;
     /** The request code when calling startActivityForResult to recover from an API service error. */
     private static final int RECOVERY_DIALOG_REQUEST = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mToolbar.setTitle(generateTitle());
+        setSupportActionBar(mToolbar);
+
+        int previousTabPosition = 0;
+        if (savedInstanceState != null) {
+            previousTabPosition = savedInstanceState.getInt("previousTabPosition", 0);
+        }
+        setupPagers(previousTabPosition);
+
+        mToolbar.setSubtitle(generateSubtitle(mPagerAdapter.getPlaylistItem(0).getName()));
+
+        checkYouTubeApi();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("previousTabPosition", mTabPageChangeListener.mPreviousPosition);
+    }
+
+    private void doLayout() {
+        boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+
+        ((TabLayout) findViewById(R.id.tabs)).setVisibility(mIsFullscreen ? View.GONE : View.VISIBLE);
+        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).layout(isPortrait, mIsFullscreen);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        doLayout();
+    }
+
+    @Override
+    public void onFullscreen(boolean isFullscreen) {
+        this.mIsFullscreen = isFullscreen;
+        doLayout();
+    }
+
+    public void onClickClose(View view) {
+        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onClickClose(view);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == RECOVERY_DIALOG_REQUEST) {
+            // Recreate the activity if user performed a recovery action
+            recreate();
+        }
+    }
+
+    private void checkYouTubeApi() {
+        YouTubeInitializationResult errorReason =
+                YouTubeApiServiceUtil.isYouTubeApiServiceAvailable(this);
+        if (errorReason.isUserRecoverableError()) {
+            errorReason.getErrorDialog(this, RECOVERY_DIALOG_REQUEST).show();
+        } else if (errorReason != YouTubeInitializationResult.SUCCESS) {
+            String errorMessage =
+                    String.format(getString(R.string.error_player), errorReason.toString());
+            Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+        }
+    }
 
     private CharSequence generateSubtitle(String text) {
         SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -53,81 +125,47 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
         return builder;
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        getLayoutInflater().setFactory(this);
+    public boolean currentFragmentIs(Fragment fragment) {
+        return fragment == mPagerAdapter.getItem(mPager.getCurrentItem());
+    }
 
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        mToolbar.setTitle(generateTitle());
-        setSupportActionBar(mToolbar);
-
+    private void setupPagers(int previousTabPosition) {
         mPagerAdapter = new ChannelPagerAdapter(this, getSupportFragmentManager());
         mPager = (ViewPager) findViewById(R.id.top_pager);
         mPager.setAdapter(mPagerAdapter);
 
-        mToolbar.setSubtitle(generateSubtitle(mPagerAdapter.getPlaylistItem(0).getName()));
+        mTabPageChangeListener = new TabPageChangeListener(previousTabPosition);
+        mPager.addOnPageChangeListener(mTabPageChangeListener);
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mPager);
-
-        mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            private int mPreviousPosition = 0;
-
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                String name = mPagerAdapter.getPlaylistItem(position).getName();
-                mToolbar.setSubtitle(MainActivity.this.generateSubtitle(name));
-                ChannelFragment channelFragment = mPagerAdapter.getRegisteredFragment(mPreviousPosition);
-                if (channelFragment != null) {
-                    channelFragment.pauseVideoFragment(true);
-                }
-                mPreviousPosition = position;
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
-
-        checkYouTubeApi();
     }
 
-    @Override
-    public void onFullscreen(boolean isFullscreen) {
-        this.mIsFullscreen = isFullscreen;
-        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onFullscreen(isFullscreen);
-    }
+    private final class TabPageChangeListener implements ViewPager.OnPageChangeListener {
+        private int mPreviousPosition;
 
-    public void onClickClose(View view) {
-        ((ChannelFragment) mPagerAdapter.getRegisteredFragment(mPager.getCurrentItem())).onClickClose(view);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == RECOVERY_DIALOG_REQUEST) {
-            // Recreate the activity if user performed a recovery action
-            recreate();
+        public TabPageChangeListener(int previousPosition) {
+            mPreviousPosition = previousPosition;
         }
-    }
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-    private void checkYouTubeApi() {
-        YouTubeInitializationResult errorReason =
-                YouTubeApiServiceUtil.isYouTubeApiServiceAvailable(this);
-        if (errorReason.isUserRecoverableError()) {
-            errorReason.getErrorDialog(this, RECOVERY_DIALOG_REQUEST).show();
-        } else if (errorReason != YouTubeInitializationResult.SUCCESS) {
-            String errorMessage =
-                    String.format(getString(R.string.error_player), errorReason.toString());
-            Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            String name = mPagerAdapter.getPlaylistItem(position).getName();
+            mToolbar.setSubtitle(MainActivity.this.generateSubtitle(name));
+            ChannelFragment channelFragment = mPagerAdapter.getRegisteredFragment(mPreviousPosition);
+            if (channelFragment != null && position != mPreviousPosition) {
+                channelFragment.pauseVideoFragment(true);
+            }
+            mPreviousPosition = position;
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+
         }
     }
 }
