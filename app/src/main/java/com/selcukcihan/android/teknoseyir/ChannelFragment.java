@@ -35,7 +35,6 @@ public class ChannelFragment extends ListFragment {
     private final static String PLAYLIST_ICON_ID_PARAMETER = "com.selcukcihan.android.teknoseyir.PLAYLIST_ICON_ID_PARAMETER";
 
     private Playlist mPlaylist;
-    private List<VideoEntry> mVideos = new LinkedList<VideoEntry>();
 
     private ProgressDialog mDialog;
 
@@ -62,7 +61,7 @@ public class ChannelFragment extends ListFragment {
 
         layout(getActivity().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT, false);
 
-        new RetrieveJSONTask().execute(mPlaylist.getPlaylistId());
+        ((VideoAdapter) getListAdapter()).fill();
     }
 
     @Override
@@ -72,7 +71,7 @@ public class ChannelFragment extends ListFragment {
             mPlaylist = new Playlist(getArguments().getString(PLAYLIST_NAME_PARAMETER),
                     getArguments().getString(PLAYLIST_ID_PARAMETER),
                     getArguments().getInt(PLAYLIST_ICON_ID_PARAMETER));
-            setListAdapter(new VideoAdapter(getActivity(), mVideos));
+            setListAdapter(new VideoAdapter(getActivity(), mPlaylist));
         }
     }
 
@@ -171,7 +170,7 @@ public class ChannelFragment extends ListFragment {
 
         //VideoFragment fragment = (VideoFragment) getChildFragmentManager().findFragmentByTag(mPlaylist.getPlaylistId());
         View videoBox = this.getView().findViewById(R.id.video_box);
-        String videoId = mVideos.get(position).getVideoId();
+        String videoId = ((VideoEntry) getListAdapter().getItem(position)).getVideoId();
         videoFragment.setVideoId(videoId);
 
         // The videoBox is INVISIBLE if no video was previously selected, so we need to show it now.
@@ -249,38 +248,4 @@ public class ChannelFragment extends ListFragment {
             });
         }
     }
-
-    private final class RetrieveJSONTask extends AsyncTask<String, Void, List<VideoEntry>> {
-        private Exception mException;
-
-        protected List<VideoEntry> doInBackground(String... urls) {
-
-            try {
-                YoutubeRepository repo = new YoutubeRepository();
-                return repo.getVideosOf(urls[0]);
-            } catch (Exception e) {
-                this.mException = e;
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            if (((MainActivity) getActivity()).currentFragmentIs(ChannelFragment.this)) {
-                ChannelFragment.this.mDialog = new ProgressDialog(getContext());
-                ChannelFragment.this.mDialog.setMessage(ChannelFragment.this.mDialog.getContext().getResources().getString(R.string.waiting));
-                ChannelFragment.this.mDialog.show();
-            }
-        }
-
-        protected void onPostExecute(List<VideoEntry> videos) {
-            ChannelFragment.this.discardDialog();
-            if (mException == null) {
-                mVideos = videos;
-                ((VideoAdapter) ChannelFragment.this.getListAdapter()).updateData(videos);
-                ((VideoAdapter) ChannelFragment.this.getListAdapter()).notifyDataSetChanged();
-            }
-        }
-    }
-
 }

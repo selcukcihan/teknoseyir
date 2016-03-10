@@ -19,59 +19,45 @@ import java.util.logging.Logger;
  * Created by SELCUKCI on 2.3.2016.
  */
 public class YoutubeRepository {
-    private String mUploadsListId;
+    private final List<VideoEntry> mVideos;
+    private final Playlist mPlaylist;
+    private String mNextPageToken = null;
 
-    public List<VideoEntry> getVideosOf(String playlistId) throws JSONException {
+    public YoutubeRepository(Playlist playlist) {
+        mVideos = new LinkedList<VideoEntry>();
+        mPlaylist = playlist;
+    }
+
+    public int size() {
+        return mVideos.size();
+    }
+
+    public VideoEntry get(int position) {
+        return mVideos.get(position);
+    }
+
+
+    public boolean hasMoreVideos() {
+        return mNextPageToken != null && !mNextPageToken.isEmpty();
+    }
+
+    public void fetch() throws JSONException {
         List<VideoEntry> videos = new LinkedList<VideoEntry>();
-
-
-        String secondJSON = getJSON("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId="
-                + playlistId + "&key=" + DeveloperKey.DEVELOPER_KEY);
-        JSONArray array = (new JSONObject(secondJSON)).getJSONArray("items");
+        String jsonString = getJSON(mPlaylist.getSearchURL(mNextPageToken));
+        JSONObject json = new JSONObject(jsonString);
+        JSONArray array = json.getJSONArray("items");
+        if (json.has("nextPageToken")) { // if there is a next page, get the token
+            mNextPageToken = json.getString("nextPageToken");
+        } else { // end of the list, no next pages, hasMoreVideos should return false from that point on
+            mNextPageToken = "";
+        }
 
         for (int i = 0; i < array.length(); i++) {
             String videoId = array.getJSONObject(i).getJSONObject("contentDetails").getString("videoId");
             String title = array.getJSONObject(i).getJSONObject("snippet").getString("title");
             videos.add(new VideoEntry(title, videoId));
         }
-        return videos;
-    }
-
-    public List<VideoEntry> getVideosFrom(String playlistTitle) throws JSONException {
-        String firstJSON = getJSON("https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=teknoseyir&key="
-                + DeveloperKey.DEVELOPER_KEY);
-        String channelId = (new JSONObject(firstJSON)).getJSONArray("items").getJSONObject(0).getString("id");
-        String playlistsJSON = getJSON("https://www.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50&channelId=" + channelId + "&key=" + DeveloperKey.DEVELOPER_KEY);
-        JSONArray array = (new JSONObject(playlistsJSON)).getJSONArray("items");
-        List<VideoEntry> videos = new LinkedList<VideoEntry>();
-        for (int i = 0; i < array.length(); i++) {
-            String title = array.getJSONObject(i).getJSONObject("snippet").getString("title");
-            String playlistId = array.getJSONObject(i).getString("id");
-            if (title.equalsIgnoreCase(playlistTitle)) {
-                return getVideosOf(playlistId);
-            }
-        }
-        return videos;
-    }
-
-    public List<VideoEntry> getAllVideos() throws JSONException {
-        List<VideoEntry> videos = new LinkedList<VideoEntry>();
-
-        String firstJSON = getJSON("https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=teknoseyir&key="
-                + DeveloperKey.DEVELOPER_KEY);
-        String uploads = (new JSONObject(firstJSON)).getJSONArray("items").getJSONObject(0).getJSONObject("contentDetails").getJSONObject("relatedPlaylists").getString("uploads");
-        mUploadsListId = uploads;
-
-        String secondJSON = getJSON("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId="
-                + mUploadsListId + "&key=" + DeveloperKey.DEVELOPER_KEY);
-        JSONArray array = (new JSONObject(secondJSON)).getJSONArray("items");
-
-        for (int i = 0; i < array.length(); i++) {
-            String videoId = array.getJSONObject(i).getJSONObject("contentDetails").getString("videoId");
-            String title = array.getJSONObject(i).getJSONObject("snippet").getString("title");
-            videos.add(new VideoEntry(title, videoId));
-        }
-        return videos;
+        mVideos.addAll(videos);
     }
 
     private String getJSON(String url) {

@@ -113,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements YouTubePlayer.OnF
 
     private CharSequence generateTitle() {
         String [] titleWords = getResources().getString(R.string.app_name).split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])");
+        titleWords[1] = " " + titleWords[1] + " ";
 
         SpannableStringBuilder builder = new SpannableStringBuilder();
 

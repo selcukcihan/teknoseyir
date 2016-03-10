@@ -31,7 +31,7 @@ public class ChannelPagerAdapter extends FragmentPagerAdapter {
 
         mPages = new LinkedList<Playlist>();
         mPages.add(new Playlist(mContext.getResources().getString(R.string.karma), "UUFIHrIGT0MBMRHzQtmzOWlQ",
-                R.drawable.ic_home_white_24dp));
+                R.drawable.ic_home_white_24dp).makeChannel());
         mPages.add(new Playlist(mContext.getResources().getString(R.string.bilgisayar), "PLImzRKDoJEgEoIe2v_z706686pSFZtjt-",
                 R.drawable.ic_computer_white_24dp));
         mPages.add(new Playlist(mContext.getResources().getString(R.string.telefon), "PLImzRKDoJEgHq9nQFuJEZoZEMjPA2r-NV",

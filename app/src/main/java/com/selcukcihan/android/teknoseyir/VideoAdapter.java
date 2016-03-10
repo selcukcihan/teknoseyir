@@ -1,6 +1,8 @@
 package com.selcukcihan.android.teknoseyir;
 
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +22,9 @@ import java.util.Map;
  * Created by SELCUKCI on 1.3.2016.
  */
 public class VideoAdapter extends BaseAdapter {
+    private final Playlist mPlaylist;
+    private final YoutubeRepository mRepo;
 
-    private List<VideoEntry> entries;
     private final List<View> entryViews;
     private final Map<YouTubeThumbnailView, YouTubeThumbnailLoader> thumbnailViewToLoaderMap;
     private final LayoutInflater inflater;
@@ -29,19 +32,20 @@ public class VideoAdapter extends BaseAdapter {
 
     private boolean labelsVisible;
 
-    public VideoAdapter(Context context, List<VideoEntry> entries) {
-        this.entries = entries;
-
+    public VideoAdapter(Context context, Playlist playlist) {
+        mPlaylist = playlist;
         entryViews = new ArrayList<View>();
         thumbnailViewToLoaderMap = new HashMap<YouTubeThumbnailView, YouTubeThumbnailLoader>();
         inflater = LayoutInflater.from(context);
         thumbnailListener = new ThumbnailListener();
 
         labelsVisible = true;
+
+        mRepo = new YoutubeRepository(mPlaylist);
     }
 
-    public void updateData(List<VideoEntry> entries) {
-        this.entries = entries;
+    public void fill() {
+        new RetrieveJSONTask().execute();
     }
 
     public void releaseLoaders() {
@@ -59,12 +63,12 @@ public class VideoAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return entries.size();
+        return mRepo.size();
     }
 
     @Override
     public VideoEntry getItem(int position) {
-        return entries.get(position);
+        return mRepo.get(position);
     }
 
     @Override
@@ -74,8 +78,12 @@ public class VideoAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        if (position == getCount() - 1 && mRepo.hasMoreVideos()) { // scrolled to the last item
+            new RetrieveJSONTask().execute();
+        }
+
         View view = convertView;
-        VideoEntry entry = entries.get(position);
+        VideoEntry entry = mRepo.get(position);
 
         // There are three cases here
         if (view == null) {
@@ -103,6 +111,41 @@ public class VideoAdapter extends BaseAdapter {
         label.setVisibility(labelsVisible ? View.VISIBLE : View.GONE);
         return view;
     }
+
+    private final class RetrieveJSONTask extends AsyncTask<Void, Void, Void> {
+        private Exception mException;
+
+        protected Void doInBackground(Void... params) {
+            try {
+                VideoAdapter.this.mRepo.fetch();
+            } catch (Exception e) {
+                this.mException = e;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            /*
+            if (((MainActivity) getActivity()).currentFragmentIs(ChannelFragment.this)) {
+                ChannelFragment.this.mDialog = new ProgressDialog(getContext());
+                ChannelFragment.this.mDialog.setMessage(ChannelFragment.this.mDialog.getContext().getResources().getString(R.string.waiting));
+                ChannelFragment.this.mDialog.show();
+            }*/
+        }
+
+        protected void onPostExecute(Void result) {
+            //ChannelFragment.this.discardDialog();
+            if (mException == null) {
+                VideoAdapter.this.notifyDataSetChanged();
+
+                //mVideos = videos;
+                //((VideoAdapter) ChannelFragment.this.getListAdapter()).updateData(videos);
+                //((VideoAdapter) ChannelFragment.this.getListAdapter()).notifyDataSetChanged();
+            }
+        }
+    }
+
 
     private final class ThumbnailListener implements  YouTubeThumbnailView.OnInitializedListener, YouTubeThumbnailLoader.OnThumbnailLoadedListener {
 
